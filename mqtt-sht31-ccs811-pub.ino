@@ -34,7 +34,6 @@
 //
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>   // https://github.com/knolleary/pubsubclient/
-#include <time.h> // for ntp
 #include <Wire.h>
 
 // https://github.com/AmbientDataInc/Ambient_AirQuality/tree/master/examples/CCS811_test
@@ -160,13 +159,11 @@ void setup() {
   Serial.begin(115200);
 
   Wire.begin(PIN_SDA, PIN_SCL); //SDA, SCL
-  Wire.setClockStretchLimit(3000);  // !!!! ATTENTION : The CCS811 clock stretch is very short time. !!!!
+  Wire.setClockStretchLimit(30000);  // !!!! ATTENTION : The CCS811 clock stretch is very short time. !!!!
 
   setup_wifi();
   setup_ccs811();
   sht31.begin(0x45);
-
-  configTime(9 * 3600, 0, "ntp.nict.jp");
 }
 
 void loop() {
@@ -201,36 +198,17 @@ void loop() {
 }
 
 void publish_message(float temperature, float humidity, uint32_t co2, uint32_t tvoc) {
-  char time_str[32];
-  memset(time_str, 0, 32);
-
-  time_t tm_t;
-  struct tm *st_tm;
-  tm_t = time(NULL);
-  st_tm = localtime(&tm_t);
-  snprintf(
-    time_str,
-    32,
-    "%d%02d%02dT%02d%02d%02d+0900",
-    st_tm->tm_year + 1900,
-    st_tm->tm_mon + 1,
-    st_tm->tm_mday,
-    st_tm->tm_hour,
-    st_tm->tm_min,
-    st_tm->tm_sec
-  );
-
   volatile int16_t t = (int16_t)temperature;
   volatile int16_t h = (int16_t)humidity;
 
   char msg[128];
   memset(msg, 0, 128);
-  snprintf(msg, 128, "{\"tmp\":%d,\"hum\":%d,\"co2\":%u,\"tvos\":%u,\"t\":\"%s\"}",
+  snprintf(msg, 128, "{\"tmp\":%d,\"hum\":%d,\"co2\":%u,\"tvos\":%u}",
            t,
            h,
            co2,
-           tvoc,
-           time_str);
+           tvoc
+           );
            
   Serial.print("mqtt_publish : ");
   Serial.println(msg);
