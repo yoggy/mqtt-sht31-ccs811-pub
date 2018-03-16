@@ -173,6 +173,8 @@ void loop() {
   }
   mqtt_client.loop();
 
+  delay(1000);
+
   // every 1sec
   if (diff_time() > 1000) {
     if (ccs811.dataAvailable()) {
